@@ -1,6 +1,10 @@
 name: "Terraform Cloud Module Push"
 description: "Very quickly made action to push Terraform Module versions to a private Terraform Cloud Registry"
 
+branding:
+  icon: archive
+  color: purple
+
 inputs:
   artifact-file:
     required: true
