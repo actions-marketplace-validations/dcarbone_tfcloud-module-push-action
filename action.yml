@@ -1,0 +1,90 @@
+name: "Terraform Cloud Module Push"
+description: "Very quickly made action to push Terraform Module versions to a private Terraform Cloud Registry"
+
+inputs:
+  artifact-file:
+    required: true
+    description: "Full path to module version artifact to upload"
+  token:
+    required: true
+    description: "Terraform Cloud API Token with at least \"Manage Modules\" permissions."
+  organization:
+    required: true
+    description: "Name of Terraform Cloud organization"
+  namespace:
+    required: true
+    description: "Name of Terraform Cloud namespace"
+  module-name:
+    required: true
+    description: "Name of module"
+  provider-name:
+    required: true
+    description: "Name of provider used by module"
+  registry-name:
+    required: true
+    default: "private"
+    description: "Terraform Cloud registry name"
+  version:
+    required: true
+    default: ""
+    description: "Version to push. Will attempt to create from tag version if not provided."
+
+runs:
+  using: composite
+  steps:
+    - shell: "bash"
+      run: |
+        echo "::add-mask::${{ inputs.token }}"
+        
+        if ! [[ -f "${{ inputs.artifact-file }}" ]; then
+          echo "Cannot locate artifact file ${{ inputs.artifact-file }}"
+          exit 1
+        fi
+        
+        _version="${{ inputs.version }}"
+        if [[ -z "${_version}" ]]; then
+          _version="$(echo -n "${{ github.ref_name }}" | sed 's/^v//g')"
+        fi
+        
+        echo "Will create version \"${_version}\"..."
+        
+        _url='https://app.terraform.io/api/v2/organizations/${{ inputs.organization }}/registry-modules/${{ inputs.registry-name }}/${{ inputs.namespace }}/${{ inputs.module-name }}/${{ inputs.provider-name }}/versions'
+        echo "Will push to \"${_url}\"..."
+        
+        _body="{\"data\":{\"type\":\"registry-module-versions\",\"attributes\":{\"version\":\"${_version}\"}}}"
+        echo "Request body: ${_body}"
+        
+        _create_resp="$(curl \
+          -s \
+          -X POST \
+          -H 'Content-Type: application/vnd.api+json' \
+          -H "Authorization: Bearer ${{ inputs.token }}" \
+          --data-raw "${_body}" \
+          "${_url}")"
+        
+        _upload_link="$(echo -n "${_create_resp}" | jq --raw-output '.data.links.upload')"          
+        if [[ $"{_upload_link}" == "null" ]]; then
+          echo "Error creating module version:"
+          echo "${_create_resp}"
+          exit 1
+        fi
+        
+        echo "Upload URL: ${_upload_link}"
+        
+        _upload_resp="$(curl \
+          -s \
+          -X PUT \
+          -H 'Content-Type: application/octet-stream' \
+          -o /dev/null \
+          -w "%{http_code}" \
+          --data-binary @"${{ inputs.artifact-file }}" \
+          "${_upload_link}")"
+        
+        if [[ "${_upload_resp}" != "200" ]]; then
+          echo "Upload errored: expected response code 200, saw ${_upload_resp}"
+          exit 1
+        fi
+        
+        echo "Version ${_version} created successfully"
+        
+        exit 0
