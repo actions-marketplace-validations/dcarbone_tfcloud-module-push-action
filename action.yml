@@ -73,7 +73,7 @@ runs:
           exit 1
         fi
         
-        echo "Upload URL: ${_upload_link}"
+        echo "::add-mask::${_upload_link}"
         
         _upload_resp="$(curl \
           -s \
