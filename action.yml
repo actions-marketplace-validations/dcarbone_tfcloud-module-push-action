@@ -40,7 +40,7 @@ runs:
       run: |
         echo "::add-mask::${{ inputs.token }}"
         
-        if ! [[ -f "${{ inputs.artifact-file }}" ]; then
+        if ! [[ -f "${{ inputs.artifact-file }}" ]]; then
           echo "Cannot locate artifact file ${{ inputs.artifact-file }}"
           exit 1
         fi
