@@ -35,7 +35,7 @@ permissions:
   contents: write
 
 jobs:
-  create-release:
+  create-version:
     runs-on: ubuntu-latest
     steps:
       # check out code
