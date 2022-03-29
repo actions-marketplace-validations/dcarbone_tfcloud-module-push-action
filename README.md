@@ -19,7 +19,10 @@ Configuration of this action is super simple:
 * `registry-name` - Name of Registry to push to
   * Defaults to `private`
 * `version` - Version to create in Terraform Cloud
-  * If left empty, produces version from tag using `"$(echo -n "${{ github.ref_name }}" | sed 's/^v//g')"`
+  * If left empty, produces version from tag using
+    ```
+    "$(echo -n "${{ github.ref_name }}" | sed 's/^v//g')"
+    ```
 
 # Example
 
