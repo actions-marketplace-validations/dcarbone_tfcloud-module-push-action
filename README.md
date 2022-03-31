@@ -14,7 +14,7 @@ Configuration of this action is super simple:
 * `module-name` - Name of module
 * `provider-name` Name of primary provider used by module
  
-# Optional Inputs 
+## Optional Inputs 
 
 * `registry-name` - Name of Registry to push to
   * Defaults to `private`
