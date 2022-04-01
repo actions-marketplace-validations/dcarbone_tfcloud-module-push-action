@@ -67,7 +67,7 @@ jobs:
       # utilize this action to push new module version to Terraform Cloud
       - name: "Create module version"
         if: ${{ success() }}
-        uses: dcarbone/tfcloud-module-push-action@v0.1.3
+        uses: dcarbone/tfcloud-module-push-action@v0.1.4
         with:
           artifact-file: ${{ steps.artifact.outputs.artifact_filepath }}
           token: ${{ secrets.TFCLOUD_API_KEY }}
