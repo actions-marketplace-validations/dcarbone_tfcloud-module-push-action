@@ -1,9 +1,9 @@
 # Terraform Cloud Module Push Action
 GitHub Action to push new module versions to a Terraform Cloud registry.
 
-# Configuration
+# Inputs
 
-## Required Inputs
+## Required
 
 * `artifact-file` - Path to artifact file
 * `token` - Terraform Cloud API Token with at least "Manage Modules" permissions.
@@ -12,7 +12,7 @@ GitHub Action to push new module versions to a Terraform Cloud registry.
 * `module-name` - Name of module
 * `provider-name` Name of primary provider used by module
  
-## Optional Inputs 
+## Optional 
 
 * `registry-name` - Name of Registry to push to
   * Defaults to `private`
@@ -21,6 +21,15 @@ GitHub Action to push new module versions to a Terraform Cloud registry.
     ```
     "$(echo -n "${{ github.ref_name }}" | sed 's/^v//g')"
     ```
+
+# Outputs
+
+* `module` - JSON response from one of:
+  * https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#create-a-module-with-no-vcs-connection
+    * Returned when module is registered with this action
+  * https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#get-a-module
+    * Returned with module was already registered
+* `errors` - Any error seen during execution
 
 # Example
 
