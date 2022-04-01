@@ -24,11 +24,8 @@ GitHub Action to push new module versions to a Terraform Cloud registry.
 
 # Outputs
 
-* `module` - JSON response from one of:
-  * https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#create-a-module-with-no-vcs-connection
-    * Returned when module is registered with this action
-  * https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#get-a-module
-    * Returned with module was already registered
+* `version` - JSON response from:
+  * https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#create-a-module-version
 * `errors` - Any error seen during execution
 
 # Example
