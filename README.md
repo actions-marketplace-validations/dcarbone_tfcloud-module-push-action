@@ -1,9 +1,7 @@
-# tfcloud-module-push-action
-GitHub Action to push modules to a private Terraform Cloud registry
+# Terraform Cloud Module Push Action
+GitHub Action to push new module versions to a Terraform Cloud registry.
 
 # Configuration
-
-Configuration of this action is super simple:
 
 ## Required Inputs
 
@@ -27,21 +25,18 @@ Configuration of this action is super simple:
 # Example
 
 ```yaml
-name: "Push Module Version"
+name: "Create Module Version"
 
 on:
   push:
     tags:
       - 'v*'
 
-permissions:
-  contents: write
-
 jobs:
   create-version:
     runs-on: ubuntu-latest
     steps:
-      # check out code
+      # check out module code
       - uses: actions/checkout@v3
       
       # create tar.gz artifact of the module, excluding any non-essential file
@@ -72,7 +67,7 @@ jobs:
       # utilize this action to push new module version to Terraform Cloud
       - name: "Create module version"
         if: ${{ success() }}
-        uses: dcarbone/tfcloud-module-push-action@v0.1.2
+        uses: dcarbone/tfcloud-module-push-action@v0.1.3
         with:
           artifact-file: ${{ steps.artifact.outputs.artifact_filepath }}
           token: ${{ secrets.TFCLOUD_API_KEY }}

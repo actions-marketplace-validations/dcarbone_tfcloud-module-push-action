@@ -1,4 +1,4 @@
-name: "Terraform Cloud Module Push"
+name: "Push Terraform Cloud Module Version"
 description: "Very quickly made action to push Terraform Module versions to a private Terraform Cloud Registry"
 
 branding:
@@ -33,17 +33,37 @@ inputs:
     default: ""
     description: "Version to push. Will attempt to create from tag version if not provided."
 
+outputs:
+  errors:
+    description: "Any error that occurred during version creation"
+    value: ${{ steps.create.outputs.errors
+  version:
+    description: "Module version JSON"
+    value: ${{ steps.create.outputs.version }}
+
+
 runs:
   using: composite
   steps:
-    - shell: "bash"
+    - name: "Setup"
+      id: setup
+      shell: bash
+      run: |
+        if ! [[ -f "${{ inputs.artifact-file }}" ]]; then
+         echo "Cannot locate artifact file ${{ inputs.artifact-file }}"
+         exit 1
+        fi
+        
+        _base_url='https://app.terraform.io/api/v2/organizations/${{ inputs.organization }}/registry-modules/${{ inputs.registry-name }}/${{ inputs.namespace }}/${{ inputs.module-name }}/${{ inputs.provider-name }}'
+        
+        echo "::set-output name=tfcloud_base_url::${_base_url}"
+
+    - name: "Create Module Version"
+      id: create
+      if: ${{ success() }}
+      shell: bash
       run: |
         echo "::add-mask::${{ inputs.token }}"
-        
-        if ! [[ -f "${{ inputs.artifact-file }}" ]]; then
-          echo "Cannot locate artifact file ${{ inputs.artifact-file }}"
-          exit 1
-        fi
         
         _version="${{ inputs.version }}"
         if [[ -z "${_version}" ]]; then
@@ -52,11 +72,9 @@ runs:
         
         echo "Will create version \"${_version}\"..."
         
-        _url='https://app.terraform.io/api/v2/organizations/${{ inputs.organization }}/registry-modules/${{ inputs.registry-name }}/${{ inputs.namespace }}/${{ inputs.module-name }}/${{ inputs.provider-name }}/versions'
-        echo "Will push to \"${_url}\"..."
+        _url='${{ steps.setup.outputs.tfcloud_base_url}}/versions'
         
         _body="{\"data\":{\"type\":\"registry-module-versions\",\"attributes\":{\"version\":\"${_version}\"}}}"
-        echo "Request body: ${_body}"
         
         _create_resp="$(curl \
           -s \
@@ -66,15 +84,21 @@ runs:
           --data-raw "${_body}" \
           "${_url}")"
         
-        _upload_link="$(echo -n "${_create_resp}" | jq --raw-output '.data.links.upload')"          
-        if [[ $"{_upload_link}" == "null" ]]; then
+        echo "::set-output name=version::${_create_resp}"
+        
+        # attempt to parse upload link out of response body
+        _upload_link="$(echo -n "${_create_resp}" | jq --raw-output '.data.links.upload')" 
+        # if upload link not found, indicates error occurred
+        if [[ "${_upload_link}" == "null" ]]; then
           echo "Error creating module version:"
-          echo "${_create_resp}"
+          echo "::set-output name=errors::${_create_resp}"
           exit 1
         fi
         
+        # mask upload link as its _kinda_ secret?
         echo "::add-mask::${_upload_link}"
         
+        # attempt upload of artifact to terraform cloud
         _upload_resp="$(curl \
           -s \
           -X PUT \
@@ -84,8 +108,10 @@ runs:
           --data-binary @"${{ inputs.artifact-file }}" \
           "${_upload_link}")"
         
-        if [[ "${_upload_resp}" != "200" ]]; then
+        # anything other than a 200 OK is bad.
+        if [[ "${_upload_resp}" -ne "200" ]]; then
           echo "Upload errored: expected response code 200, saw ${_upload_resp}"
+          echo "::set-output name=errors::${_upload_resp}"
           exit 1
         fi
         
