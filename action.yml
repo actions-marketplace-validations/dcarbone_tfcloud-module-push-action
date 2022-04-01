@@ -36,7 +36,7 @@ inputs:
 outputs:
   errors:
     description: "Any error that occurred during version creation"
-    value: ${{ steps.create.outputs.errors
+    value: ${{ steps.create.outputs.errors }}
   version:
     description: "Module version JSON"
     value: ${{ steps.create.outputs.version }}
