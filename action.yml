@@ -36,20 +36,23 @@ inputs:
 outputs:
   errors:
     description: "Any error that occurred during version creation"
-    value: ${{ steps.create.outputs.errors }}
+    value: '${{ steps.create.outputs.errors }}'
   version:
     description: "Module version JSON"
-    value: ${{ steps.create.outputs.version }}
+    value: '${{ steps.create.outputs.version }}'
 
 
 runs:
   using: composite
   steps:
+    - name: "Ensure jq is installed"
+      uses: dcarbone/install-jq-action@v1.0.0
+
     - name: "Setup"
       id: setup
       shell: bash
       run: |
-        if ! [[ -f "${{ inputs.artifact-file }}" ]]; then
+        if ! [ -f "${{ inputs.artifact-file }}" ]; then
          echo "Cannot locate artifact file ${{ inputs.artifact-file }}"
          exit 1
         fi
@@ -60,13 +63,12 @@ runs:
 
     - name: "Create Module Version"
       id: create
-      if: ${{ success() }}
       shell: bash
       run: |
         echo "::add-mask::${{ inputs.token }}"
         
         _version="${{ inputs.version }}"
-        if [[ -z "${_version}" ]]; then
+        if [ -z "${_version}" ]; then
           _version="$(echo -n "${{ github.ref_name }}" | sed 's/^v//g')"
         fi
         
@@ -109,7 +111,7 @@ runs:
           "${_upload_link}")"
         
         # anything other than a 200 OK is bad.
-        if [[ "${_upload_resp}" -ne "200" ]]; then
+        if [ "${_upload_resp}" -ne "200" ]; then
           echo "Upload errored: expected response code 200, saw ${_upload_resp}"
           echo "errors=${_upload_resp}" >> $GITHUB_OUTPUT
           exit 1
