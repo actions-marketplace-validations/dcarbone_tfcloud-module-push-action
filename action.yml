@@ -56,7 +56,7 @@ runs:
         
         _base_url='https://app.terraform.io/api/v2/organizations/${{ inputs.organization }}/registry-modules/${{ inputs.registry-name }}/${{ inputs.namespace }}/${{ inputs.module-name }}/${{ inputs.provider-name }}'
         
-        echo "::set-output name=tfcloud_base_url::${_base_url}"
+        echo "tfcloud_base_url=${_base_url}" >> $GITHUB_OUTPUT
 
     - name: "Create Module Version"
       id: create
@@ -84,14 +84,14 @@ runs:
           --data-raw "${_body}" \
           "${_url}")"
         
-        echo "::set-output name=version::${_create_resp}"
+        echo "version=${_create_resp}" >> $GITHUB_OUTPUT
         
         # attempt to parse upload link out of response body
         _upload_link="$(echo -n "${_create_resp}" | jq --raw-output '.data.links.upload')" 
         # if upload link not found, indicates error occurred
         if [[ "${_upload_link}" == "null" ]]; then
           echo "Error creating module version:"
-          echo "::set-output name=errors::${_create_resp}"
+          echo "errors=${_create_resp}" >> $GITHUB_OUTPUT
           exit 1
         fi
         
@@ -111,7 +111,7 @@ runs:
         # anything other than a 200 OK is bad.
         if [[ "${_upload_resp}" -ne "200" ]]; then
           echo "Upload errored: expected response code 200, saw ${_upload_resp}"
-          echo "::set-output name=errors::${_upload_resp}"
+          echo "errors=${_upload_resp}" >> $GITHUB_OUTPUT
           exit 1
         fi
         
